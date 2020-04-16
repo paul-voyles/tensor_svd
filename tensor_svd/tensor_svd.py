@@ -2,6 +2,8 @@ import logging
 
 import numpy as np
 from scipy.sparse.linalg import eigs
+from sklearn.utils.extmath import randomized_svd as fast_svd
+
 
 _logger = logging.getLogger(__name__)
 
@@ -30,7 +32,7 @@ def svd_HO(data, rank, max_iter=100):
         print("The rank should be the same size as the data shape")
 
     data0 = data   # might have to change to limit copying
-    data_shape = np.shape(data) # p0
+    data_shape = np.shape(data)         # p0
     dimensions = len(data_shape)        # d
     X = data # Data copy to reduce
     u_total = [0,0,0]
