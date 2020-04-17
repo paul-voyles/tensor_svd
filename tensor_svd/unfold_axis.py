@@ -2,8 +2,8 @@ import numpy as np
 
 def unfold_axis(data, k):
     # def unfold_axis(data, target_dim):
-    data = np.linspace(1,10000,10000)
-    data = np.reshape(data,[10,10,10,10])
+    # data = np.linspace(1,10000,10000)
+    # data = np.reshape(data,[10,10,10,10])
     # print(t[0,:,0,0])
 
     target_dim = k
