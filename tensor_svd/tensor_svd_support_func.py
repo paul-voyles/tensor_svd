@@ -74,3 +74,42 @@ def ttm(t, m, k):
     t_mul = np.transpose(t_mul, dim_order)
 
     return t_mul
+
+def scree_plots(t, ndim = []):
+    
+    """ Performs scree tests for each dimension of the input tensor
+
+    Parameters
+    ----------
+    t : numpy array
+        Higher-order tensor with size (I1 , I2 , ... , IN) along N dimensions.
+    ndim : optional, list with N integer elements
+        Number of components to calculate along each dimension. If not defined, the maximum size along each dimension will be used.
+
+    Returns
+    -------
+
+    scree : list of N numpy arrays
+        One array with size ndim[i] for each dimension saving the eigenvalues for this dimension.
+    """
+    total_dim = len(t.shape)
+    if ndim = []:   # case with no input ndim
+        for i in range(total_dim):
+            ndim.append(t.shape[i])
+    elif len(ndim) != total_dim:    # case that input ndim does not agree with number of dimensions of the input tensor
+        for i in range(total_dim):
+            ndim.append(t.shape[i])
+    else:   # check whether the number in ndim is less than the size of that dimension
+        for i in range(total_dim):
+            if ndim[i] > t.shape[i]:
+                ndim[i] = t.shape[i]
+    
+    scree = []
+    for i in range(total_dim):
+        t_unfold = unfold_axis(t, i)
+        [ _, e, _ ] = fast_svd(np.matmul(t,np.transpose(t)),ndim[i])
+        e = np.sqrt(e)
+        e = np.real(e)
+        scree.append(e)
+
+    return scree
