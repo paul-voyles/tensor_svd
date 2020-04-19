@@ -3,7 +3,7 @@ import logging
 import numpy as np
 from scipy.sparse.linalg import eigs
 from sklearn.utils.extmath import randomized_svd as fast_svd
-from unfold_axis import unfold_axis
+from unfold_axis import unfold_axis, ttm
 
 
 _logger = logging.getLogger(__name__)
@@ -42,10 +42,6 @@ def svd_HO(data, rank, max_iter=10):
     for k in ordered_indexes: # calculating initial SVD
         unfolded = unfold_axis(data, k) # unfolding along the minimum axis
         [u_index, _ , _] = fast_svd(unfolded,rank[k])
-        # if np.shape(unfolded)[0] > np.shape(unfolded)[1]: # if the unfolded axis is less than the unfolded
-        #     u_index = svd(unfolded, rank[k]) # svd along the min axis length
-        # else:
-        #     u_index = eigs(A=unfolded*unfolded.T, k =rank[k])
         u_total.append(u_index)
         X = np.tensordot(X, u_index, axes=k) # This needs to be fixed!
 
@@ -68,5 +64,10 @@ def svd_HO(data, rank, max_iter=10):
 
     for k in range(0,dimensions):
         X = np.tensordot(X,u_index[k], k)
+
+    # if np.shape(unfolded)[0] > np.shape(unfolded)[1]: # if the unfolded axis is less than the unfolded
+    #     u_index = svd(unfolded, rank[k]) # svd along the min axis length
+    # else:
+    #     u_index = eigs(A=unfolded*unfolded.T, k =rank[k])
 
     return X

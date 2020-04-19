@@ -4,10 +4,13 @@ import time
 from scipy.sparse.linalg import eigs
 import matplotlib.pyplot as plt
 from sklearn.utils.extmath import randomized_svd as fast_svd
+from tensorflow.python.client import device_lib
+
+print(device_lib.list_local_devices())
 
 time_list_tf = []
 size_list = []
-for isize in range(8):
+for isize in range(15):
     t = tf.constant(np.random.rand(500*(isize+1),500*(isize+1)))
     t_sqr = tf.linalg.matmul(t,t)
 
@@ -27,7 +30,7 @@ time_list_scipy = []
 time_list_sklearn = []
 time_list_fastsvd = []
 
-for isize in range(8):
+for isize in range(15):
     t = np.random.rand(500*(isize+1),500*(isize+1))
     start = time.time()
     e, v = np.linalg.eig(np.matmul(t,np.transpose(t)))
