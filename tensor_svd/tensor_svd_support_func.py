@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.utils.extmath import randomized_svd as fast_svd
 
 def unfold_axis(data, k):
 
@@ -93,7 +94,7 @@ def scree_plots(t, ndim = []):
         One array with size ndim[i] for each dimension saving the eigenvalues for this dimension.
     """
     total_dim = len(t.shape)
-    if ndim = []:   # case with no input ndim
+    if not ndim:   # case with no input ndim
         for i in range(total_dim):
             ndim.append(t.shape[i])
     elif len(ndim) != total_dim:    # case that input ndim does not agree with number of dimensions of the input tensor
@@ -107,7 +108,7 @@ def scree_plots(t, ndim = []):
     scree = []
     for i in range(total_dim):
         t_unfold = unfold_axis(t, i)
-        [ _, e, _ ] = fast_svd(np.matmul(t,np.transpose(t)),ndim[i])
+        [ _, e, _ ] = fast_svd(np.matmul(t_unfold,np.transpose(t_unfold)),ndim[i])
         e = np.sqrt(e)
         e = np.real(e)
         scree.append(e)

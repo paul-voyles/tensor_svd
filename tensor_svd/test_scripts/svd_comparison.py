@@ -39,7 +39,7 @@ for isize in range(15):
     print(end - start)
 
     start = time.time()
-    e, v = eigs(np.matmul(t,np.transpose(t)))
+    e, v = eigs(np.matmul(t,np.transpose(t)),k=100)
     end = time.time()
     time_list_scipy.append(end - start)
     print(end - start)
@@ -56,11 +56,17 @@ for isize in range(15):
     time_list_fastsvd.append(end - start)
     print(end - start)
 
+np.save('TF_time.npy',np.asarray(time_list_tf))
+np.save('NP_time.npy',np.asarray(time_list_np))
+np.save('SCIPY_time.npy',np.asarray(time_list_scipy))
+np.save('SKLEARN_time.npy',np.asarray(time_list_sklearn))
+np.save('RANDSVD_time.npy',np.asarray(time_list_fastsvd))
+
 plt.plot(size_list, time_list_tf,'.', label = 'Tensorflow')
 plt.plot(size_list, time_list_np,'.', label = 'Numpy')
-plt.plot(size_list, time_list_scipy,'.', label = 'Scipy')
+plt.plot(size_list, time_list_scipy,'^', label = 'Scipy')
 plt.plot(size_list, time_list_sklearn,'.', label = 'Sklearn')
-plt.plot(size_list, time_list_fastsvd,'.', label = 'Fast SVD, 100 Components')
+plt.plot(size_list, time_list_fastsvd,'^', label = 'Randomized SVD')
 plt.legend(fontsize = 14)
 plt.xlabel('Matrix Size',fontsize=14)
 plt.ylabel('SVD Time (sec)',fontsize=14)
