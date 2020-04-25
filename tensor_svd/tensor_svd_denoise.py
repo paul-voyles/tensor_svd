@@ -2,6 +2,7 @@ import logging
 
 import numpy as np
 from sklearn.utils.extmath import randomized_svd as fast_svd
+import matplotlib.pyplot as plt
 
 _logger = logging.getLogger(__name__)
 
@@ -16,6 +17,7 @@ def tensor_svd_denoise(data, rank):
     rank: numpy array
         Integer array (R1, R2, R3) denoise ranks for hyperspectral data or 4D STEM data, R1, R2 for real space dimensions, R3 for energy or k dimension.
         Three elements for both 3D and 4D input data.
+        If rank is empty, scree_plot function will be called to run scree tests and generate scree plots to help user determine ranks to use..
 
     Returns
     -------
@@ -26,7 +28,39 @@ def tensor_svd_denoise(data, rank):
 
     Future to do list:
     1. Roughly estimate noise level and determine the number of iterations to use in HOOI algorithm.
+    2. Atuomatically determine denoising ranks from eigenvalues.
     """
+    # Case when rank is not determined and need to call scree_plots function
+    if rank == []:
+        if len(data.shape) == 4:
+            data = np.reshape(data, [data.shape[0], data.shape[1], data.shape[2]*data.shape[3]])
+        ndim = np.asarray(data.shape)
+        ndim[ndim>150] = 150    # Plot the first 150 eigenvalues if the dimension size is larger than 150.
+        scree = scree_plots(data, ndim = ndim.tolist())
+
+        # Show three scree plots
+        plt.figure()
+        plt.subplot(131)
+        plt.scatter(np.linspace(2,ndim[0],ndim[0]-1),scree[0][1::],s=3)
+        plt.title('Dimension 1')
+        plt.xlabel('Index',fontsize=14)
+        plt.ylabel('Log(Eigenvalue)',fontsize=14)
+
+        plt.subplot(132)
+        plt.scatter(np.linspace(2,ndim[1],ndim[1]-1),scree[1][1::],s=3)
+        plt.title('Dimension 2')
+        plt.xlabel('Index',fontsize=14)
+
+        plt.subplot(133)
+        plt.scatter(np.linspace(2,ndim[2],ndim[2]-1),scree[2][1::],s=3)
+        plt.title('Dimension 3')
+        plt.xlabel('Index',fontsize=14)
+
+        plt.show()
+
+        return scree
+
+    # Case when SVD ranks are fed in the input, call svd_HO function to denoise
 
     if len(data.shape) == 3:  # hyperspectral data case, directly feed data to svd_HO function
         [X, _, _] = svd_HO(data, rank)
@@ -172,7 +206,6 @@ def ttm(t, m, k):
         shape_list.append(t.shape[(k - i) % total_dim])
     dim_order = tuple(dim_list)
     shape_list[0] = m.shape[0]
-    shape_order = tuple(shape_list)
 
     t_unfold = unfold_axis(t, k)
     t_mul = np.matmul(m, t_unfold)
@@ -197,6 +230,7 @@ def scree_plots(t, ndim = []):
 
     scree : list of N numpy arrays
         One array with size ndim[i] for each dimension saving the eigenvalues for this dimension.
+
     """
     total_dim = len(t.shape)
     if not ndim:   # case with no input ndim
@@ -213,7 +247,7 @@ def scree_plots(t, ndim = []):
     scree = []
     for i in range(total_dim):
         t_unfold = unfold_axis(t, i)
-        [ _, e, _ ] = fast_svd(np.matmul(t_unfold,np.transpose(t_unfold)),ndim[i],n_iter=svd_iter)
+        [ _, e, _ ] = fast_svd(np.matmul(t_unfold,np.transpose(t_unfold)),ndim[i],n_iter=15)
         e = np.sqrt(e)
         e = np.real(e)
         scree.append(e)

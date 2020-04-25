@@ -1,12 +1,12 @@
 import numpy as np
 from tensor_svd_support_func import unfold_axis, ttm, scree_plots
 import matplotlib.pyplot as plt
-from tensor_svd_denoise import svd_HO
+from tensor_svd_denoise import svd_HO, tensor_svd_denoise
 import time
 import scipy.io as sio
 
-data = sio.loadmat('D:/2020/TensorSVD/ManuscriptRelated/SimulationData/DenoiseInput_fullsize/SiDislocation/Simulation_noisy_SiDisl_slc5_1000FPS.mat')
-# data = sio.loadmat('D:/2020/TensorSVD/ManuscriptRelated/SimulationData/DenoiseInput_fullsize/STO/Simulation_noisy_STO_slice_5_1000FPS_fullsize.mat')
+# data = sio.loadmat('D:/2020/TensorSVD/ManuscriptRelated/SimulationData/DenoiseInput_fullsize/SiDislocation/Simulation_noisy_SiDisl_slc5_1000FPS.mat')
+data = sio.loadmat('D:/2020/TensorSVD/ManuscriptRelated/SimulationData/DenoiseInput_fullsize/STO/Simulation_noisy_STO_slice_5_1000FPS_fullsize.mat')
 data = data['datacube'].astype(np.float)
 
 # Test the output of scree_plots -- passed
@@ -21,21 +21,22 @@ data = data['datacube'].astype(np.float)
 
 # Test the tensor SVD output -- passed
 start = time.time()
-rank =[2,2,10]
+# rank =[2,2,10]
 # data = data[:,:,0:10000]
-# rank = [7,7,30]
-X,U,S = svd_HO(data,rank,max_iter=10)
+rank = [7,7,30]
+# scree = tensor_svd_denoise(data, [])
+X = tensor_svd_denoise(data,rank)
 end = time.time()
 print(end - start)
 print('SVD finished.')
 # np.save('SiDisl_1000FPS_denoised_python.npy',X)
 
-# plt.subplot(121)
-# plt.imshow(X[:,:,10].reshape(114,114))
+plt.subplot(121)
+plt.imshow(X[:,:,10].reshape(114,114))
 
-# plt.subplot(122)
-# plt.imshow(data[:,:,10].reshape(114,114))
-# plt.show()
+plt.subplot(122)
+plt.imshow(data[:,:,10].reshape(114,114))
+plt.show()
 
 # Test quantitative match between python output and matlab output -- In Jupyter Notebook -- passed
 # Max difference = 1%, mostly < 0.3%
