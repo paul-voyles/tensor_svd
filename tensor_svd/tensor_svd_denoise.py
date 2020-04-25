@@ -5,9 +5,41 @@ from sklearn.utils.extmath import randomized_svd as fast_svd
 
 _logger = logging.getLogger(__name__)
 
+def tensor_svd_denoise(data, rank):
+    """ Wrapper to pre-process STEM data for tensor SVD denoise
+
+    Parameters
+    ----------
+    data : numpy array
+        3D or 4D noisy input data with first two dimensions being navigation dimensions.
+        3D data for hyperspectral data or 4D data with reciprocal space unfolded into one dimension, 4D data for original 4D STEM data.
+    rank: numpy array
+        Integer array (R1, R2, R3) denoise ranks for hyperspectral data or 4D STEM data, R1, R2 for real space dimensions, R3 for energy or k dimension.
+        Three elements for both 3D and 4D input data.
+
+    Returns
+    -------
+
+    X: numpy array
+        Denoised data with low rank and the same size of input data.
+
+
+    Future to do list:
+    1. Roughly estimate noise level and determine the number of iterations to use in HOOI algorithm.
+    """
+
+    if len(data.shape) == 3:  # hyperspectral data case, directly feed data to svd_HO function
+        [X, _, _] = svd_HO(data, rank)
+    if len(data.shape) == 4:    # Original 4D STEM data case, unfold reciprocal space dimensions into one dimension then feed to svd_HO function
+        data = np.reshape(data, [data.shape[0], data.shape[1], data.shape[2]*data.shape[3]])
+        [X, _, _] = svd_HO(data, rank)
+    
+    return X
+
+
 
 def svd_HO(data, rank, max_iter=10):
-    """ Preforms a higher order SVD on some tensor with some rank defined by rank
+    """ HOOI method to decompose high order tensor with given ranks
 
     Parameters
     ----------
@@ -28,9 +60,23 @@ def svd_HO(data, rank, max_iter=10):
     S: numpy array
         Core tensor of the low rank tensor X with size (R1, R2, R3, ... , Rn).
     """
+    svd_iter = 10
     data_shape = np.shape(data)         # p0
+
+    # Check that number of dimensions match the number of rank numbers
     if len(data_shape) != len(rank):
         print("The rank should be the same size as the data shape")
+        return data, [], []
+
+    # Check that for each rank, the product of all the rest ranks are larger than this rank
+    for k in range(len(rank)):
+        prod = 1
+        for i in range(len(rank)):
+            if i != k:
+                prod = prod * rank[i]
+        if rank[k] > prod:
+            print("The rank does not satisfy requirment of HOOI.")
+            return data, [], []
 
     dimensions = len(data_shape)        # d
     ordered_indexes = np.argsort(data_shape) # getting the indicies from min len to max, initialization starts from smallest size
@@ -40,7 +86,7 @@ def svd_HO(data, rank, max_iter=10):
     X = data
     for k in ordered_indexes: # calculating initial SVD
         unfolded = unfold_axis(X, k) # unfolding from the axis with minimum size
-        [U[k], _ , _] = fast_svd(unfolded,rank[k])
+        [U[k], _ , _] = fast_svd(unfolded,rank[k],n_iter=svd_iter)
         X = ttm(X, np.transpose(U[k]), k) # This needs to be fixed!
 
     ## Update U with HOOI
@@ -54,7 +100,7 @@ def svd_HO(data, rank, max_iter=10):
             for j in minus_k:
                 Y = ttm(Y, np.transpose(U[j]), j)
             MY = unfold_axis(Y, k)
-            [U[k], _, _] = fast_svd(MY, rank[k])
+            [U[k], _, _] = fast_svd(MY, rank[k],n_iter=svd_iter)
 
     ## Use the determined U matrices to calculate core tensor and denoised tensor
     X = data
@@ -66,7 +112,7 @@ def svd_HO(data, rank, max_iter=10):
 
     return X, U, S
 
-    def unfold_axis(data, k):
+def unfold_axis(data, k):
 
     """ return matrix representation of a higher-order tensor along certain dimension
 
@@ -93,11 +139,9 @@ def svd_HO(data, rank, max_iter=10):
     for i in range(total_dim):
         dim_list.append((target_dim - i) % total_dim)
     dim_order = tuple(dim_list)
-    # print(dim_order)
 
     data_unfold = np.transpose(data,dim_order)
     data_unfold = np.reshape(data_unfold,[data.shape[k],int(data.size/data.shape[k])])
-    # print(data_unfold[2,:])
     return data_unfold
 
 def ttm(t, m, k):
@@ -169,7 +213,7 @@ def scree_plots(t, ndim = []):
     scree = []
     for i in range(total_dim):
         t_unfold = unfold_axis(t, i)
-        [ _, e, _ ] = fast_svd(np.matmul(t_unfold,np.transpose(t_unfold)),ndim[i])
+        [ _, e, _ ] = fast_svd(np.matmul(t_unfold,np.transpose(t_unfold)),ndim[i],n_iter=svd_iter)
         e = np.sqrt(e)
         e = np.real(e)
         scree.append(e)

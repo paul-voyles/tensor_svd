@@ -1,7 +1,7 @@
 import numpy as np
 from tensor_svd_support_func import unfold_axis, ttm, scree_plots
 import matplotlib.pyplot as plt
-from tensor_svd import svd_HO
+from tensor_svd_denoise import svd_HO
 import time
 import scipy.io as sio
 
@@ -21,14 +21,14 @@ data = data['datacube'].astype(np.float)
 
 # Test the tensor SVD output -- passed
 start = time.time()
-rank =[33,30,185]
+rank =[2,2,10]
 # data = data[:,:,0:10000]
 # rank = [7,7,30]
 X,U,S = svd_HO(data,rank,max_iter=10)
 end = time.time()
 print(end - start)
 print('SVD finished.')
-np.save('SiDisl_1000FPS_denoised_python.npy',X)
+# np.save('SiDisl_1000FPS_denoised_python.npy',X)
 
 # plt.subplot(121)
 # plt.imshow(X[:,:,10].reshape(114,114))
