@@ -1,7 +1,6 @@
 import numpy as np
-from tensor_svd_support_func import unfold_axis, ttm, scree_plots
 import matplotlib.pyplot as plt
-from tensor_svd_denoise import svd_HO, tensor_svd_denoise
+from tensor_svd_denoise import svd_HO, tensor_svd_denoise, scree_plots
 import time
 import scipy.io as sio
 

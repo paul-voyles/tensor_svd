@@ -2,7 +2,6 @@ import logging
 
 import numpy as np
 from sklearn.utils.extmath import randomized_svd as fast_svd
-import matplotlib.pyplot as plt
 
 _logger = logging.getLogger(__name__)
 
@@ -30,36 +29,6 @@ def tensor_svd_denoise(data, rank):
     1. Roughly estimate noise level and determine the number of iterations to use in HOOI algorithm.
     2. Atuomatically determine denoising ranks from eigenvalues.
     """
-    # Case when rank is not determined and need to call scree_plots function
-    if rank == []:
-        if len(data.shape) == 4:
-            data = np.reshape(data, [data.shape[0], data.shape[1], data.shape[2]*data.shape[3]])
-        ndim = np.asarray(data.shape)
-        ndim[ndim>150] = 150    # Plot the first 150 eigenvalues if the dimension size is larger than 150.
-        scree = scree_plots(data, ndim = ndim.tolist())
-
-        # Show three scree plots
-        plt.figure()
-        plt.subplot(131)
-        plt.scatter(np.linspace(2,ndim[0],ndim[0]-1),scree[0][1::],s=3)
-        plt.title('Dimension 1')
-        plt.xlabel('Index',fontsize=14)
-        plt.ylabel('Log(Eigenvalue)',fontsize=14)
-
-        plt.subplot(132)
-        plt.scatter(np.linspace(2,ndim[1],ndim[1]-1),scree[1][1::],s=3)
-        plt.title('Dimension 2')
-        plt.xlabel('Index',fontsize=14)
-
-        plt.subplot(133)
-        plt.scatter(np.linspace(2,ndim[2],ndim[2]-1),scree[2][1::],s=3)
-        plt.title('Dimension 3')
-        plt.xlabel('Index',fontsize=14)
-
-        plt.show()
-
-        return scree
-
     # Case when SVD ranks are fed in the input, call svd_HO function to denoise
 
     if len(data.shape) == 3:  # hyperspectral data case, directly feed data to svd_HO function
