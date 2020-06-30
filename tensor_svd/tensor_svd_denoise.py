@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 from sklearn.utils.extmath import randomized_svd as fast_svd
-
+from hyperspy.signals import BaseSignal,Signal1D, Signal2D
 _logger = logging.getLogger(__name__)
 
 def tensor_svd_denoise(data, rank):
@@ -12,11 +12,14 @@ def tensor_svd_denoise(data, rank):
     ----------
     data : numpy array
         3D or 4D noisy input data with first two dimensions being navigation dimensions.
-        3D data for hyperspectral data or 4D data with reciprocal space unfolded into one dimension, 4D data for original 4D STEM data.
+        3D data for hyperspectral data or 4D data with reciprocal space unfolded into one dimension,
+        4D data for original 4D STEM data.
     rank: numpy array
-        Integer array (R1, R2, R3) denoise ranks for hyperspectral data or 4D STEM data, R1, R2 for real space dimensions, R3 for energy or k dimension.
+        Integer array (R1, R2, R3) denoise ranks for hyperspectral data or 4D STEM data, R1,
+        R2 for real space dimensions, R3 for energy or k dimension.
         Three elements for both 3D and 4D input data.
-        If rank is empty, scree_plot function will be called to run scree tests and generate scree plots to help user determine ranks to use..
+        If rank is empty, scree_plot function will be called to run scree tests and generate scree plots
+        to help user determine ranks to use..
 
     Returns
     -------
@@ -30,15 +33,26 @@ def tensor_svd_denoise(data, rank):
     2. Atuomatically determine denoising ranks from eigenvalues.
     """
     # Case when SVD ranks are fed in the input, call svd_HO function to denoise
+    is_hyperspy = isinstance(data, BaseSignal)
+    if is_hyperspy:
+        naxes = [axis.get_axis_dictionary() for axis in data.axes_manager.navigation_axes]
+        saxes = [axis.get_axis_dictionary() for axis in data.axes_manager.signal_axes]
+        axes = naxes+saxes
+        data = data.data
 
     if len(data.shape) == 3:  # hyperspectral data case, directly feed data to svd_HO function
         [X, _, _] = svd_HO(data, rank)
     if len(data.shape) == 4:    # Original 4D STEM data case, unfold reciprocal space dimensions into one dimension then feed to svd_HO function
         data = np.reshape(data, [data.shape[0], data.shape[1], data.shape[2]*data.shape[3]])
         [X, _, _] = svd_HO(data, rank)
-    
+    if is_hyperspy:
+        if len(data.shape) == 3:
+            print(axes)
+            print(np.shape(X))
+            X = Signal1D(X, axes=axes)
+        if len(data.shape)==4:
+            X = Signal2D(X, axes=axes)
     return X
-
 
 
 def svd_HO(data, rank, max_iter=10):
