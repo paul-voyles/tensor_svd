@@ -115,19 +115,13 @@ def svd_HO(data, rank, max_iter=10):
 
     return X, U, S
 
-def weighted_tensor(data, weights, reverse_option):
+def weighted_tensor(data):
     """ weighting the whole tensor along each dimension following Jones et al., J. Chemometrics 22, 482, 2008 designed for Poisson noise.
 
     Parameters
     ----------
     data : numpy array
         Higher-order tensor with size (I1, I2, ... , IN) along N dimensions
-
-    weights : list of numpy arrays
-        A list of N numpy arrays, each one is a 1D vector with length Ik. This argument is required if reverse_option = 1.
-
-    reverse_option: bool
-        Flag marking whether to perform weighting transform or reverse the transform using the weights input.
 
     Returns
     -------
@@ -138,12 +132,13 @@ def weighted_tensor(data, weights, reverse_option):
         A list of N numpy arrays, each one is a 1D vector with length Ik, saving the weights along dimension k. Empty list will be returned if reverse_option = 1.
 
     """
-    if reverse_option == 1 and weights == []:
-        return data, []
 
     total_dim = len(data.shape)
+
+    # Create weights tensor that has the same shape as the input data and save the weights at each element
     if reverse_option == 0:
-        weights = [None] * total_dim
+        weights = np.ones(data.shape)
+
     # calculate the weight vector along each dimension
     for i in range(total_dim):
         # prepare dimension list, swap dimension 0 and target dimension i
@@ -151,35 +146,24 @@ def weighted_tensor(data, weights, reverse_option):
         dim_list[0], dim_list[i] = dim_list[i], dim_list[0]
         dim_order = tuple(dim_list)
 
-        # unfold the tensor into a 2D matrix
+        # unfold the data and weight tensor into a 2D matrix
         data_unfold = np.transpose(data, dim_order)
+        weights_unfold = np.transpose(weights, dim_order)
         new_shape = data_unfold.shape
         data_unfold = np.reshape(data_unfold,[data.shape[i],int(data.size/data.shape[i])])
+        weights_unfold = np.reahspe(weights_unfold,[data.shape[i],int(data.size/data.shape[i])])
 
-        if reverse_option == 0:     # forward transform should be performed
-            # calculate the weight for target dimension, with length being ki. Save them in the weights list for later reverse transform.
-            temp = np.mean(data_unfold, axis = 1)
-            temp = temp / np.sum(temp)
-            weights[i] = temp
-            
-            # weight the original data
-            for j in range(len(temp)):
-                data_unfold[j,:] = data_unfold[j,:] * temp[j]
-            
-
-        else:   # backword transform should be performed
-            temp = weights[i]
-            for j in range(len(temp)):
-                data_unfold[j,:] = data_unfold[j,:] / temp[j]
-
-        # Unfold back to the original tensor shape
-        data_unfold = np.reshape(data_unfold, new_shape)
-        data = np.transpose(data_unfold, dim_order)
+        # calculate the weight vector (length ki) for target dimension using the unfolded data.
+        temp = np.mean(data_unfold, axis = 1)
+        temp = temp / np.sum(temp)
         
-    if reverse_option == 1:
-        return data, []
-    else:
-        return data, weights
+        # multiply the unfolded weight matrix then reshape back to the original shape
+        weights_unfold = np.multiply(weights_unfold, temp)
+        weights_unfold = np.reshape(weights_unfold, new_shape)
+        weights = np.transpose(weights_unfold, dim_order)
+
+    data = np.multiply(data, weights)
+    return data, weights
 
 def unfold_axis(data, k):
 
