@@ -136,8 +136,7 @@ def weighted_tensor(data):
     total_dim = len(data.shape)
 
     # Create weights tensor that has the same shape as the input data and save the weights at each element
-    if reverse_option == 0:
-        weights = np.ones(data.shape)
+    weights = np.ones(data.shape)
 
     # calculate the weight vector along each dimension
     for i in range(total_dim):
@@ -151,14 +150,14 @@ def weighted_tensor(data):
         weights_unfold = np.transpose(weights, dim_order)
         new_shape = data_unfold.shape
         data_unfold = np.reshape(data_unfold,[data.shape[i],int(data.size/data.shape[i])])
-        weights_unfold = np.reahspe(weights_unfold,[data.shape[i],int(data.size/data.shape[i])])
+        weights_unfold = np.reshape(weights_unfold,[data.shape[i],int(data.size/data.shape[i])])
 
         # calculate the weight vector (length ki) for target dimension using the unfolded data.
         temp = np.mean(data_unfold, axis = 1)
         temp = temp / np.sum(temp)
         
         # multiply the unfolded weight matrix then reshape back to the original shape
-        weights_unfold = np.multiply(weights_unfold, temp)
+        weights_unfold = weights_unfold * temp.reshape([-1,1])
         weights_unfold = np.reshape(weights_unfold, new_shape)
         weights = np.transpose(weights_unfold, dim_order)
 
