@@ -154,6 +154,7 @@ def weighted_tensor(data):
 
         # calculate the weight vector (length ki) for target dimension using the unfolded data.
         temp = np.mean(data_unfold, axis = 1)
+        temp = 1 / np.sqrt(temp)
         temp = temp / np.sum(temp)
         
         # multiply the unfolded weight matrix then reshape back to the original shape
